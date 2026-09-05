@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Email Lookup</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+    }
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    }
+    h1 { margin: 0 0 8px; text-align: center; }
+    .intro { text-align: center; color: #666; margin-bottom: 24px; }
+    label { display: block; margin: 14px 0 7px; font-weight: 600; }
+    input, select, button {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 9px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 22px;
+      border: 0;
+      background: #111827;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 9px;
+      display: none;
+      word-break: break-word;
+    }
+    .success { background: #eefbf1; }
+    .error { background: #fff1f1; }
+    .email { font-weight: 700; margin-top: 7px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Student Email Lookup</h1>
+    <p class="intro">Enter your name and class to retrieve your school email address.</p>
+
+    <form id="searchForm">
+      <label for="firstName">First Name</label>
+      <input id="firstName" required autocomplete="given-name">
+
+      <label for="otherName">Other Name</label>
+      <input id="otherName" required autocomplete="additional-name">
+
+      <label for="lastName">Last Name</label>
+      <input id="lastName" required autocomplete="family-name">
+
+      <label for="className">Class</label>
+      <select id="className" required>
+        <option value="">-- Select Class --</option>
+        <option value="DILIGENCE">DILIGENCE</option>
+        <option value="FAITH">FAITH</option>
+        <option value="GLORY">GLORY</option>
+        <option value="GOODNESS">GOODNESS</option>
+        <option value="JOY">JOY</option>
+        <option value="LOVE">LOVE</option>
+        <option value="PEACE">PEACE</option>
+        <option value="WISDOM">WISDOM</option>
+      </select>
+
+      <button id="searchBtn" type="submit">SEARCH</button>
+    </form>
+
+    <div id="result"></div>
+  </main>
+
+<script>
+  // Replace ONLY these two placeholders with your Supabase project details.
+  const SUPABASE_URL = "https://mmaalypiodrxrgykjgbj.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_jqvH7QMC8mBhnaIHrwkncg_g8nDCHdC";
+
+  const form = document.getElementById("searchForm");
+  const button = document.getElementById("searchBtn");
+  const result = document.getElementById("result");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    result.style.display = "none";
+    button.disabled = true;
+    button.textContent = "SEARCHING...";
+
+    const body = {
+      p_first_name: document.getElementById("firstName").value.trim(),
+      p_other_name: document.getElementById("otherName").value.trim(),
+      p_last_name: document.getElementById("lastName").value.trim(),
+      p_class: document.getElementById("className").value.trim()
+    };
+
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/rpc/search_student`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Search request failed.");
+      }
+
+      const data = await response.json();
+
+      if (data.length === 1) {
+        result.className = "success";
+        result.innerHTML =
+          "<strong>Student found.</strong><div class='email'>" +
+          escapeHtml(data[0].email) +
+          "</div>";
+      } else if (data.length > 1) {
+        result.className = "error";
+        result.textContent =
+          "More than one student matched. Please enter all three names correctly.";
+      } else {
+        result.className = "error";
+        result.textContent =
+          "No matching student was found. Check your name and class and try again.";
+      }
+
+      result.style.display = "block";
+    } catch (error) {
+      result.className = "error";
+      result.textContent =
+        "Unable to complete the search. Please try again.";
+      result.style.display = "block";
+    } finally {
+      button.disabled = false;
+      button.textContent = "SEARCH";
+    }
+  });
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+</script>
+</body>
+</html>
