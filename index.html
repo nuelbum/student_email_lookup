@@ -50,6 +50,13 @@
       display: none;
       word-break: break-word;
     }
+    .copy-btn {
+      width: auto;
+      margin-top: 10px;
+      padding: 9px 14px;
+      font-size: 14px;
+      background: #374151;
+    }
     .success { background: #eefbf1; }
     .error { background: #fff1f1; }
     .email { font-weight: 700; margin-top: 7px; }
@@ -133,11 +140,31 @@
       const data = await response.json();
 
       if (data.length === 1) {
+        const email = data[0].email;
+
         result.className = "success";
         result.innerHTML =
-          "<strong>Student found.</strong><div class='email'>" +
-          escapeHtml(data[0].email) +
-          "</div>";
+          "<strong>Student found.</strong>" +
+          "<div class='email' id='studentEmail'>" +
+          escapeHtml(email) +
+          "</div>" +
+          "<button type='button' class='copy-btn' id='copyEmailBtn'>Copy Email</button>";
+
+        document.getElementById("copyEmailBtn").addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(email);
+
+            const copyBtn = document.getElementById("copyEmailBtn");
+            copyBtn.textContent = "Copied!";
+
+            setTimeout(() => {
+              copyBtn.textContent = "Copy Email";
+            }, 2000);
+
+          } catch (error) {
+            alert("Unable to copy the email. Please copy it manually.");
+          }
+        });
       } else if (data.length > 1) {
         result.className = "error";
         result.textContent =
